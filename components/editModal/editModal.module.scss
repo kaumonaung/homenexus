@@ -1,0 +1,111 @@
+@import '../../styles/colors.scss';
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  max-width: 500px;
+  max-height: 250px;
+
+  background-color: $gray-100;
+  z-index: 2;
+  border-radius: 1rem;
+}
+
+.modalContent {
+  padding: 20px;
+  overflow-y: auto;
+  height: auto;
+
+  .label {
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    line-height: 1.5rem;
+    color: $gray-900;
+  }
+
+  .textarea {
+    width: 100%;
+    border-radius: 0.375rem;
+    border: 2px solid transparent;
+    color: $gray-900;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    outline: 1px solid $gray-200;
+    outline-offset: -1px;
+    padding: 0.3rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+    resize: none;
+
+    &:focus {
+      border: 2px solid $primaryColor;
+      outline-style: inset;
+      outline-color: transparent;
+    }
+
+    ::placeholder {
+      color: $gray-500;
+    }
+  }
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  gap: 1.25rem;
+
+  .confirm {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.375rem;
+    background-color: $primaryColor;
+    padding: 0.6rem 3rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05),
+      0 1px 3px 1px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.2s ease-in-out;
+    border: none;
+
+    &:hover {
+      background-color: $primaryDark;
+    }
+  }
+
+  .cancel {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    padding: 0.6rem 3rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $gray-600;
+    transition: background-color 0.2s ease-in-out;
+    border: 1px solid $gray-400;
+
+    &:hover {
+      background-color: $gray-200;
+    }
+  }
+}

@@ -1,0 +1,35 @@
+@import '../../styles/colors.scss';
+
+.container {
+  padding: 0.5rem 1rem 0.5rem 1rem;
+  margin: 0;
+  display: block;
+
+  @media (min-width: 640px) {
+    display: flex;
+    align-items: center;
+
+    padding: 0 1rem 0 1rem;
+  }
+
+  .logoContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-right: 3rem;
+    color: white;
+    font-weight: 500;
+    font-size: 1.15rem;
+  }
+
+  h3 {
+    font-weight: 400;
+    font-size: 1.5rem;
+    color: white;
+    text-align: center;
+
+    @media (min-width: 640px) {
+      text-align: center;
+    }
+  }
+}

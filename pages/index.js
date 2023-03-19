@@ -1,123 +1,305 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
+import React, { useState, useEffect, memo } from 'react';
+import Head from 'next/head';
+import Image from 'next/image';
 
-const inter = Inter({ subsets: ['latin'] })
+import styles from '../styles/home.module.scss';
+import initialData from '@/initial-data';
+
+import Navbar from '@/components/Navbar';
+import Column from '@/components/column';
+import AddModal from '@/components/addModal';
+import DeleteModal from '@/components/deleteModal';
+import EditModal from '@/components/editModal';
+
+import { DragDropContext, Droppable } from '@hello-pangea/dnd';
+
+const InnerList = memo((props) => {
+  const {
+    columnOrder,
+    columns,
+    tasks,
+    addTask,
+    setIsOpen,
+    setColumnId,
+    setTaskId,
+    setOpenDelete,
+    setOpenEdit,
+    setItemText,
+  } = props;
+
+  return columnOrder.map((columnId, index) => {
+    const column = columns[columnId];
+    const columnTasks = column.taskIds.map((taskId) => tasks[taskId]);
+
+    return (
+      <Column
+        key={column.id}
+        column={column}
+        tasks={columnTasks}
+        index={index}
+        addTask={addTask}
+        setIsOpen={setIsOpen}
+        setColumnId={setColumnId}
+        setTaskId={setTaskId}
+        setOpenDelete={setOpenDelete}
+        setOpenEdit={setOpenEdit}
+        setItemText={setItemText}
+      />
+    );
+  });
+});
 
 export default function Home() {
+  const [data, setData] = useState();
+  const [columnId, setColumnId] = useState();
+  const [taskId, setTaskId] = useState();
+
+  const [openAdd, setOpenAdd] = useState(false);
+  const [itemText, setItemText] = useState('');
+
+  const [openDelete, setOpenDelete] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+
+  // Load data from localStorage on initial render
+  useEffect(() => {
+    const data = localStorage.getItem('homeNexusData');
+    if (data !== null && data !== undefined) {
+      setData(JSON.parse(data));
+    } else {
+      setData(initialData);
+    }
+  }, []);
+
+  const onDragEnd = (result) => {
+    const { destination, source, draggableId, type } = result;
+
+    // Do nothing if no destination is provided
+    if (!destination) {
+      return;
+    }
+
+    // Do nothing if the draggable is dropped in its original position
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    // Handle column reordering
+    if (type === 'column') {
+      const newColumnOrder = Array.from(data.columnOrder);
+      newColumnOrder.splice(source.index, 1);
+      newColumnOrder.splice(destination.index, 0, draggableId);
+
+      setData((prevData) => {
+        const updatedData = {
+          ...prevData,
+          columnOrder: newColumnOrder,
+        };
+        localStorage.setItem('homeNexusData', JSON.stringify(updatedData));
+        return updatedData;
+      });
+
+      return;
+    }
+
+    // Handle task reordering within a single column
+    if (source.droppableId === destination.droppableId) {
+      const column = data.columns[source.droppableId];
+      const newTaskIds = Array.from(column.taskIds);
+      newTaskIds.splice(source.index, 1);
+      newTaskIds.splice(destination.index, 0, draggableId);
+
+      const newColumn = {
+        ...column,
+        taskIds: newTaskIds,
+      };
+
+      setData((prevData) => {
+        const updatedData = {
+          ...prevData,
+          columns: {
+            ...prevData.columns,
+            [newColumn.id]: newColumn,
+          },
+        };
+        localStorage.setItem('homeNexusData', JSON.stringify(updatedData));
+        return updatedData;
+      });
+
+      return;
+    }
+
+    // Handle task moving across columns
+    const start = data.columns[source.droppableId];
+    const finish = data.columns[destination.droppableId];
+
+    const startTaskIds = Array.from(start.taskIds);
+    startTaskIds.splice(source.index, 1);
+    const newStart = { ...start, taskIds: startTaskIds };
+
+    const finishTaskIds = Array.from(finish.taskIds);
+    finishTaskIds.splice(destination.index, 0, draggableId);
+    const newFinish = { ...finish, taskIds: finishTaskIds };
+
+    setData((prevData) => {
+      const updatedData = {
+        ...prevData,
+        columns: {
+          ...prevData.columns,
+          [newStart.id]: newStart,
+          [newFinish.id]: newFinish,
+        },
+      };
+      localStorage.setItem('homeNexusData', JSON.stringify(updatedData));
+      return updatedData;
+    });
+  };
+
+  const addTask = () => {
+    if (!columnId || !itemText) return;
+
+    // Create a new task object
+    const newTask = {
+      id: String('task-' + Math.floor(Math.random() * Date.now())), // generate a unique ID using a library like uuid
+      content: itemText,
+    };
+
+    // Update the state to include the new task in the specified column
+    setData((prevData) => {
+      const newData = {
+        ...prevData,
+        tasks: {
+          ...prevData.tasks,
+          [newTask.id]: newTask,
+        },
+        columns: {
+          ...prevData.columns,
+          [columnId]: {
+            ...prevData.columns[columnId],
+            taskIds: [...prevData.columns[columnId].taskIds, newTask.id],
+          },
+        },
+      };
+      localStorage.setItem('homeNexusData', JSON.stringify(newData));
+      return newData;
+    });
+  };
+
+  const editTask = () => {
+    if (!taskId || !itemText) return;
+
+    // Update the state to include the new task in the specified column
+    setData((prevData) => {
+      const newData = {
+        ...prevData,
+        tasks: {
+          ...prevData.tasks,
+          [taskId]: {
+            ...prevData.tasks[taskId],
+            content: itemText,
+          },
+        },
+      };
+      localStorage.setItem('homeNexusData', JSON.stringify(newData));
+      return newData;
+    });
+  };
+
+  const deleteTask = () => {
+    if (!taskId) return;
+
+    // Update the state to remove the task from the specified column
+    setData((prevData) => {
+      const newData = {
+        ...prevData,
+        tasks: {
+          ...prevData.tasks,
+          [taskId]: undefined,
+        },
+        columns: {
+          ...prevData.columns,
+          [columnId]: {
+            ...prevData.columns[columnId],
+            taskIds: prevData.columns[columnId].taskIds.filter(
+              (id) => id !== taskId
+            ),
+          },
+        },
+      };
+      localStorage.setItem('homeNexusData', JSON.stringify(newData));
+      return newData;
+    });
+  };
+
   return (
     <>
       <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
+        <title>HomeNexus</title>
+        <meta name="description" content="Your home office planner" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.js</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
+
+      <Navbar />
+
+      {data && (
+        <main>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable
+              droppableId="all-columns"
+              direction="horizontal"
+              type="column"
             >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
+              {(provided) => (
+                <div
+                  className={styles.container}
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  <InnerList
+                    columnOrder={data.columnOrder}
+                    columns={data.columns}
+                    tasks={data.tasks}
+                    addTask={addTask}
+                    setIsOpen={setOpenAdd}
+                    setColumnId={setColumnId}
+                    setTaskId={setTaskId}
+                    setOpenDelete={setOpenDelete}
+                    setOpenEdit={setOpenEdit}
+                    setItemText={setItemText}
+                  />
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </main>
+      )}
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
+      <AddModal
+        isOpen={openAdd}
+        setIsOpen={setOpenAdd}
+        itemText={itemText}
+        setItemText={setItemText}
+        addTask={addTask}
+      />
 
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
+      <DeleteModal
+        isOpen={openDelete}
+        setIsOpen={setOpenDelete}
+        deleteTask={deleteTask}
+      />
 
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+      <EditModal
+        isOpen={openEdit}
+        setIsOpen={setOpenEdit}
+        itemText={itemText}
+        setItemText={setItemText}
+        editTask={editTask}
+      />
     </>
-  )
+  );
 }
