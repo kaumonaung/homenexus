@@ -4,7 +4,10 @@ HomeNexus is the ultimate home office tool designed to streamline your remote wo
 
 ## Features
 
-- Drag and Drop Functionality: HomeNexus provides a functional drag and drop interface, allowing users to easily manage and prioritize their tasks.
+- Drag and Drop Functionality: HomeNexus provides a functional drag and drop interface that allows users to easily manage and prioritize their tasks.
+- CRUD: Add, view, edit, and delete tasks.
+- Rearrange columns: Rearrange columns by dragging and dropping.
+- Save to local storage: All tasks are automatically saved to the local storage.
 
 ## Technologies Used
 
